@@ -43,7 +43,15 @@ io.sockets.on('connection', function(socket) {
     readMessage( data.id, function(err, rep) { socket.emit('message', rep); });
   });
   socket.on('grpmsg', function(data) {
-    sendGroupMessage( data.group, data.name, data.text, function(x) { socket.emit('ack', x); });
+    sendGroupMessage( data.group, data.name, data.text, function(x) {
+      socket.emit('ack', x);
+      io.sockets.in(data.group).emit('newmessage', x);
+    });
+  });
+  socket.on('getmessagelist', function(data) {
+    messageList( data.group, data.max, function(err,rep){
+      socket.emit('messagelist', rep);
+    });
   });
   //socket.emit('channel', {name: 'default'});
 });
@@ -64,20 +72,24 @@ function readMessage( id, callback ) {
   client.hgetall("post:" + id, callback);
 }
 
+function messageList( group, max, callback ) {
+  client.lrange("inbox:group:" + group, 0, max, callback );
+}
+
 function sendGroupMessage( group, uname, message, callback ) {
   client.incr("post:nextMessageID", function(err,rep) {
     var id = rep;
     client.multi()
       .hmset("post:" + id, {fromuser: uname, type: "chat", text: message})
       .lpush("inbox:group:" + group, id)
-      .ltrim("inbox:group:" + group, 0, 5)
+      .ltrim("inbox:group:" + group, 0, 100)
       .lpush("outbox:user:" + uname, id)
-      .ltrim("outbox:user:" + uname, 0, 3)
+      .ltrim("outbox:user:" + uname, 0, 30)
       .lpush("global:messages", id)
       .exec(function(err,rep) {
-        callback('OK');
+        callback(id);
         client.llen("global:messages", function(e,r) {
-          if (r > 6) {
+          if (r > 120) {
             client.rpop("global:messages", function(error, reply) {
               client.del("post:" + reply);
             });
