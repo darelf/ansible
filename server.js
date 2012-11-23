@@ -1,24 +1,20 @@
+var st = require('node-static');
+var file = new st.Server('./public');
+
 var app = require('http').createServer(handler),
   io = require('socket.io').listen(app),
   fs = require('fs'),
   redis = require('redis'),
   client = redis.createClient(6379, '127.0.0.1')
 
+io.set('log level', 2);
 //client.auth(PASSWORD);
 app.listen(8080);
 
 function handler(req,res) {
-  fs.readFile(__dirname + '/index.html',
-    function(err, data) {
-      if (err) {
-        res.writeHead(500);
-        return res.end("Error loading index.html");
-      }
-      
-      res.writeHead(200);
-      res.end(data);
-    }
-  );
+  req.addListener('end', function() {
+    file.serve(req,res);
+  })
 }
 
 io.sockets.on('connection', function(socket) {
@@ -29,8 +25,9 @@ io.sockets.on('connection', function(socket) {
      listUsers(data.group, function(err,rep) {io.sockets.in(data.group).emit('userlist',rep)});
     });
     socket.on('disconnect', function() {
+      console.log("Received Disconnect");
       removeUser(data.group, data.name, function(err,rep) {
-        io.sockets.in(data.group).emit('userdisconn', {uname: data.name});
+        listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep)});
       });
     });
   });
@@ -40,7 +37,7 @@ io.sockets.on('connection', function(socket) {
   socket.on('read', function(data) {
     readMessage( data.id, callback );
   });
-  socket.emit('channel', {name: 'default'});
+  //socket.emit('channel', {name: 'default'});
 });
 
 function addUser( group, name, callback ) {

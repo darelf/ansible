@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sample Client</title>
+  <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<style>
+	  body { background-image: url('debut_light.png'); }
+	  .container-fluid { margin-top: 10px; }
+	</style>
+</head>
+<body>
+  <div class="container-fluid">
+	<div class="row-fluid">
+	  <div class="span4">
+		<div class="input-append">
+		  <label for="uname">User</label>
+		  <input type="text" id="uname" class="input-small" placeholder="user name"/>
+		  <button id="login" class="btn">Connect</button>
+		</div>
+		<div class="input-append">
+		  <label for="msginput">Msg</label>
+		  <input type="text" id="msginput" class="input-large" placeholder="What's up, yo?"/>
+		  <button id="sendbutton" class="btn">Send</button>
+		</div>
+	  </div>
+	  <div class="span8">
+		<div class="well well-small">
+		  <div><em>Logged In Users</em> <span id="numusers" class="badge badge-inverse">0</span></div>
+		  <div id="userlist"></div>
+		</div>
+		<ul id="chatbox" class="unstyled">
+		  <li class="well well-small">Some text</li>
+		</ul>
+	  </div>
+	</div>
+  </div>
+  
+  <script src="http://code.jquery.com/jquery-latest.js"></script>
+  <script src="socket.io/socket.io.js"></script>
+  <script src="bootstrap/js/bootstrap.min.js"></script>
+  <script src="ansible.js"></script>
+</body>
+  <script>
+  $(function() {
+	var url = 'ws://lxfinkbeinerd:8080';
+	start_sockets(url);
+  });
+
+  </script>
+</html>

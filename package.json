@@ -4,6 +4,7 @@
   "dependencies": {
     "socket.io": "~0.9.6",
     "hiredis": "~0.1.14",
-    "redis": "~0.8.2"
+    "redis": "~0.8.2",
+    "node-static": "~0.6.5"
   }
 }
