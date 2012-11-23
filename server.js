@@ -1,14 +1,17 @@
+var fs = require('fs');
+var env = JSON.parse(fs.readFileSync('/home/dotcloud/environment.json', 'utf-8'));
+
 var st = require('node-static');
 var file = new st.Server('./public');
 
 var app = require('http').createServer(handler),
   io = require('socket.io').listen(app),
-  fs = require('fs'),
   redis = require('redis'),
-  client = redis.createClient(6379, '127.0.0.1')
+  client = redis.createClient(env['DOTCLOUD_DATA_REDIS_PORT'],
+                              env['DOTCLOUD_DATA_REDIS_HOST']);
 
 io.set('log level', 2);
-//client.auth(PASSWORD);
+client.auth(env['DOTCLOUD_DATA_REDIS_PASSWORD']);
 app.listen(8080);
 
 function handler(req,res) {
