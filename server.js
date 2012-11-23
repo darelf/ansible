@@ -1,0 +1,88 @@
+var app = require('http').createServer(handler),
+  io = require('socket.io').listen(app),
+  fs = require('fs'),
+  redis = require('redis'),
+  client = redis.createClient(6379, '127.0.0.1')
+
+//client.auth(PASSWORD);
+app.listen(8080);
+
+function handler(req,res) {
+  fs.readFile(__dirname + '/index.html',
+    function(err, data) {
+      if (err) {
+        res.writeHead(500);
+        return res.end("Error loading index.html");
+      }
+      
+      res.writeHead(200);
+      res.end(data);
+    }
+  );
+}
+
+io.sockets.on('connection', function(socket) {
+  socket.on('register', function(data) {
+    socket.join(data.group);
+    addUser(data.group, data.name, function(err,rep) {
+     socket.emit('ack', rep);
+     listUsers(data.group, function(err,rep) {io.sockets.in(data.group).emit('userlist',rep)});
+    });
+    socket.on('disconnect', function() {
+      removeUser(data.group, data.name, function(err,rep) {
+        io.sockets.in(data.group).emit('userdisconn', {uname: data.name});
+      });
+    });
+  });
+  socket.on('users', function(data) {
+    listUsers(data.group, function(err,rep) { socket.emit('userlist', rep); } );
+  });
+  socket.on('read', function(data) {
+    readMessage( data.id, callback );
+  });
+  socket.emit('channel', {name: 'default'});
+});
+
+function addUser( group, name, callback ) {
+  client.sadd( "groups:" + group, name, callback );
+}
+
+function removeUser( group, name, callback ) {
+  client.srem( "groups:" + group, name, callback );
+}
+
+function listUsers( group, callback ) {
+  client.smembers( "groups:" + group, callback );
+}
+
+function readMessage( id, callback ) {
+  client.hgetall("post:" + id, callback);
+}
+
+/*
+ addUser( group, uname ) -
+   SADD <group> <uname>
+ 
+ listMessages( uname, max ) -
+   LRANGE <uname>:inbox 0 <max>
+ 
+ sendMessage( group, uname, destination, message ) -
+   SISMEMBER <group> <username>
+   SISMEMBER <group> <destination>
+ 
+   id = INCR post:nextMessageID
+   HMSET post:<id> fromuser <m.from> type <m.type> text <m.text>
+   LPUSH inbox:<destination> id
+   LTRIM inbox:<destination> 0 100
+   LPUSH outbox:<username> id
+   LTRIM outbox:<username> 0 100
+   
+   LPUSH global:messages id
+   if LLEN global:messages > 1000
+     rid = RPOP global:messages
+     DEL post:<rid>
+ 
+   
+ readMessage( id ) -
+   GET post:<id>
+*/

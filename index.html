@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html charset="utf-8">
+<head>
+  <script src="http://code.jquery.com/jquery-1.8.2.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <title>Sample Client</title>
+  <style>
+  #chatbox { list-style-type: none; }
+  #chatbox > li { font-family: Helvetica; }
+  </style>
+</head>
+<body>
+  <label for="uname">User</label><input type="text" id="uname"/>
+  <button id="login">Connect</button><br/>
+  <label for="channel">Channel</label><input type="text" id="channel"/><br/>
+  <input type="text" id="msginput"/><button id="sendbutton">Send</button><br/>
+  <ul id="userlist"></ul>
+  <ul id="chatbox">
+    <li>Some text</li>
+  </ul>
+</body>
+  <script>
+  $(function() {
+	  var socket = io.connect('http://localhost:8080');
+	  socket.on('channel', function(data) {
+		console.log(data.name);
+		$("#channel").val(data.name);
+		socket.emit('users', { group: 'default' });
+	  });
+	  socket.on('message', function(data) {
+	    if ( data.type == 'chat' ) {
+	    
+	    }
+	  });
+	  socket.on('ack', function(data) { console.log(data); });
+	  socket.on('userlist', function(data) {
+	   console.log(data);
+	   $("#userlist").html("");
+	   data.forEach(function(val, i) {
+	     $("#userlist").append("<li>" + val + "</li>");
+	   });
+	  });
+	  $("#login").on('click', function() { if ( $("#uname").val() != "" ) {
+	      socket.emit('register', {group: 'default', name: $("#uname").val()});
+	    }
+	  });
+	  $("#sendbutton").on('click', function() {
+	    if ($("#msginput").val() != "")
+	      socket.emit('message', {group: $("#channel").val(),
+	                              text: $("#msginput").val()});
+	  });
+  });
+  </script>
+</html>
