@@ -8,7 +8,7 @@ function start_sockets(url) {
   });
   socket.on('message', function(data) {
     if ( data.type == 'chat' ) {
-    
+      $("#chatbox").append('<li class="well well-small">' + data.text + '</li>');
     }
   });
   socket.on('ack', function(data) { console.log(data); });
@@ -26,7 +26,11 @@ function start_sockets(url) {
   });
   $("#sendbutton").on('click', function() {
     if ($("#msginput").val() != "")
-      socket.emit('message', {group: $("#channel").val(),
+      socket.emit('grpmsg', {group: "default",
+                              name: $("#uname").val(),
                               text: $("#msginput").val()});
+  });
+  $("#reader").on('click', function() {
+    socket.emit('read', {id:1});
   });
 }

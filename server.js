@@ -1,5 +1,6 @@
 var fs = require('fs');
-var env = JSON.parse(fs.readFileSync('/home/dotcloud/environment.json', 'utf-8'));
+var envfloc = JSON.parse(fs.readFileSync('envloc.json', 'utf-8'));
+var env = JSON.parse(fs.readFileSync(envfloc['ENV_FILE_LOCATION'], 'utf-8'));
 
 var st = require('node-static');
 var file = new st.Server('./public');
@@ -11,7 +12,8 @@ var app = require('http').createServer(handler),
                               env['DOTCLOUD_DATA_REDIS_HOST']);
 
 io.set('log level', 2);
-client.auth(env['DOTCLOUD_DATA_REDIS_PASSWORD']);
+if (env['DOTCLOUD_DATA_REDIS_PASSWORD'] != '')
+  client.auth(env['DOTCLOUD_DATA_REDIS_PASSWORD']);
 app.listen(8080);
 
 function handler(req,res) {
@@ -38,7 +40,7 @@ io.sockets.on('connection', function(socket) {
     listUsers(data.group, function(err,rep) { socket.emit('userlist', rep); } );
   });
   socket.on('read', function(data) {
-    readMessage( data.id, function(err, rep) { socket.emit('msgcontents', rep); });
+    readMessage( data.id, function(err, rep) { socket.emit('message', rep); });
   });
   socket.on('grpmsg', function(data) {
     sendGroupMessage( data.group, data.name, data.text, function(x) { socket.emit('ack', x); });
@@ -63,34 +65,25 @@ function readMessage( id, callback ) {
 }
 
 function sendGroupMessage( group, uname, message, callback ) {
-  var id = 0;
-  client.incr("post:nextMessageID", function(err,rep) { id = rep });
-  callback(id);
+  client.incr("post:nextMessageID", function(err,rep) {
+    var id = rep;
+    client.multi()
+      .hmset("post:" + id, {fromuser: uname, type: "chat", text: message})
+      .lpush("inbox:group:" + group, id)
+      .ltrim("inbox:group:" + group, 0, 5)
+      .lpush("outbox:user:" + uname, id)
+      .ltrim("outbox:user:" + uname, 0, 3)
+      .lpush("global:messages", id)
+      .exec(function(err,rep) {
+        callback('OK');
+        client.llen("global:messages", function(e,r) {
+          if (r > 6) {
+            client.rpop("global:messages", function(error, reply) {
+              client.del("post:" + reply);
+            });
+          }
+        });
+    });
+  });
 }
 
-/*
- addUser( group, uname ) -
-   SADD <group> <uname>
- 
- listMessages( uname, max ) -
-   LRANGE <uname>:inbox 0 <max>
- 
- sendMessage( group, uname, message ) -
-   SISMEMBER <group> <username>
- 
-   id = INCR post:nextMessageID
-   HMSET post:<id> fromuser <m.from> type <m.type> text <m.text>
-   LPUSH inbox:group:<group> id
-   LTRIM inbox:group:<group> 0 1000
-   LPUSH outbox:user:<username> id
-   LTRIM outbox:user:<username> 0 100
-   
-   LPUSH global:messages id
-   if LLEN global:messages > 1000
-     rid = RPOP global:messages
-     DEL post:<rid>
- 
-   
- readMessage( id ) -
-   GET post:<id>
-*/
