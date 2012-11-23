@@ -38,7 +38,10 @@ io.sockets.on('connection', function(socket) {
     listUsers(data.group, function(err,rep) { socket.emit('userlist', rep); } );
   });
   socket.on('read', function(data) {
-    readMessage( data.id, callback );
+    readMessage( data.id, function(err, rep) { socket.emit('msgcontents', rep); });
+  });
+  socket.on('grpmsg', function(data) {
+    sendGroupMessage( data.group, data.name, data.text, function(x) { socket.emit('ack', x); });
   });
   //socket.emit('channel', {name: 'default'});
 });
@@ -59,6 +62,12 @@ function readMessage( id, callback ) {
   client.hgetall("post:" + id, callback);
 }
 
+function sendGroupMessage( group, uname, message, callback ) {
+  var id = 0;
+  client.incr("post:nextMessageID", function(err,rep) { id = rep });
+  callback(id);
+}
+
 /*
  addUser( group, uname ) -
    SADD <group> <uname>
@@ -66,16 +75,15 @@ function readMessage( id, callback ) {
  listMessages( uname, max ) -
    LRANGE <uname>:inbox 0 <max>
  
- sendMessage( group, uname, destination, message ) -
+ sendMessage( group, uname, message ) -
    SISMEMBER <group> <username>
-   SISMEMBER <group> <destination>
  
    id = INCR post:nextMessageID
    HMSET post:<id> fromuser <m.from> type <m.type> text <m.text>
-   LPUSH inbox:<destination> id
-   LTRIM inbox:<destination> 0 100
-   LPUSH outbox:<username> id
-   LTRIM outbox:<username> 0 100
+   LPUSH inbox:group:<group> id
+   LTRIM inbox:group:<group> 0 1000
+   LPUSH outbox:user:<username> id
+   LTRIM outbox:user:<username> 0 100
    
    LPUSH global:messages id
    if LLEN global:messages > 1000
