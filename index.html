@@ -5,6 +5,8 @@
   <script src="/socket.io/socket.io.js"></script>
   <title>Sample Client</title>
   <style>
+  #userlist { padding: 3px; margin: 5px; }
+  #userlist > div { display: inline-block; padding: 3px; font-size: 12px; }
   #chatbox { list-style-type: none; }
   #chatbox > li { font-family: Helvetica; }
   </style>
@@ -14,7 +16,7 @@
   <button id="login">Connect</button><br/>
   <label for="channel">Channel</label><input type="text" id="channel"/><br/>
   <input type="text" id="msginput"/><button id="sendbutton">Send</button><br/>
-  <ul id="userlist"></ul>
+  <div id="userlist"></div>
   <ul id="chatbox">
     <li>Some text</li>
   </ul>
@@ -37,7 +39,7 @@
 	   console.log(data);
 	   $("#userlist").html("");
 	   data.forEach(function(val, i) {
-	     $("#userlist").append("<li>" + val + "</li>");
+	     $("#userlist").append("<div>" + val + "</div>");
 	   });
 	  });
 	  $("#login").on('click', function() { if ( $("#uname").val() != "" ) {
