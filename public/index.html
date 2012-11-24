@@ -6,6 +6,7 @@
 	<style>
 	  body { background-image: url('debut_light.png'); }
 	  .container-fluid { margin-top: 10px; }
+	  #alertarea { min-height: 2em; }
 	</style>
 </head>
 <body>
@@ -22,9 +23,24 @@
 		  <input type="text" id="msginput" class="input-large" placeholder="What's up, yo?"/>
 		  <button id="sendbutton" class="btn">Send</button>
 		</div>
-		<button id="reader">Read</button>
 	  </div>
 	  <div class="span8">
+	  	<div id="alertarea">
+	  	</div>
+	  	<div class="input-prepend input-append">
+	  	  <div class="btn-group">
+	  	  	<button class="btn dropdown-toggle" data-toggle="dropdown">
+	  	  	  Room
+	  	  	  <span class="caret"></span>
+	  	  	</button>
+	  	  	<ul id="gameselectMenu" class="dropdown-menu">
+	  	  	  <li><a href="#">default</a></li>
+	  	  	</ul>
+	  	  </div>
+	  	  <input class="span2" id="gameselectInput" type="text" placeholder="default room"/>
+	  	  <button class="btn btn-info" type="button" id="gameselectButton">Go</button>
+	  	</div>
+	  	
 		<div class="well well-small">
 		  <div><em>Logged In Users</em> <span id="numusers" class="badge badge-inverse">0</span></div>
 		  <div id="userlist"></div>
@@ -42,8 +58,7 @@
 </body>
   <script>
   $(function() {
-	var url = 'ws://ansible-darelf.dotcloud.com';
-	start_sockets(url);
+	setup();
   });
 
   </script>

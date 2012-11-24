@@ -1,3 +1,37 @@
+function setup() {
+  $("#sendbutton").attr("disabled", "disabled");
+  // Get this party started
+  var socket = start_sockets('ws://localhost:8080');
+  // set up some events
+  $("#login").on('click', function() { if ( $("#uname").val() != "" ) {
+      socket.emit('register', {group: 'default', name: $("#uname").val()});
+      $("#sendbutton").removeAttr("disabled");
+    }
+  });
+  $("#sendbutton").on('click', function() {
+    if ($("#msginput").val() != "")
+      socket.emit('grpmsg', {group: "default",
+                              name: $("#uname").val(),
+                              text: $("#msginput").val()});
+  });
+  $("#gameselectMenu").on('click', function(ev) {
+    $("#gameselectInput").val($(ev.target).text());
+  });
+  $("#gameselectButton").on('click', function() {
+    var room = $("#gameselectInput").val();
+    if (room == '')
+      room = 'default';
+    if ( $("#uname").val() != "" ) {
+      socket.emit('register', {group: room, name: $("#uname").val()});
+    }
+  });
+}
+
+function displayWarning(txt) {
+  $("#alertarea").append('<div class="alert alert-error">' +
+    '<button type="button" class="close" data-dismiss="alert">x</button><strong>Hold Up!</strong> ' +
+     txt + '</div>');
+}
 
 function displayMessage(m) {
   if (m.type == 'chat') {
@@ -26,7 +60,13 @@ function start_sockets(url) {
   
   socket.on('message', displayMessage);
   
-  socket.on('ack', function(data) { console.log(data); });
+  socket.on('ack', function(data) {
+    console.log(data);
+    if (data == 0)
+      displayWarning("Looks like that user is already joined to that room.");
+    else
+      $(".alert").alert("close");
+  });
   
   socket.on('userlist', function(data) {
    console.log(data);
@@ -36,17 +76,6 @@ function start_sockets(url) {
      $("#userlist").append("<span class='label label-info'>" + val + "</span> ");
    });
   });
-  $("#login").on('click', function() { if ( $("#uname").val() != "" ) {
-      socket.emit('register', {group: 'default', name: $("#uname").val()});
-    }
-  });
-  $("#sendbutton").on('click', function() {
-    if ($("#msginput").val() != "")
-      socket.emit('grpmsg', {group: "default",
-                              name: $("#uname").val(),
-                              text: $("#msginput").val()});
-  });
-  $("#reader").on('click', function() {
-    socket.emit('read', {id:1});
-  });
+
+  return socket;
 }

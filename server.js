@@ -14,6 +14,7 @@ var app = require('http').createServer(handler),
 io.set('log level', 2);
 if (env['DOTCLOUD_DATA_REDIS_PASSWORD'] != '')
   client.auth(env['DOTCLOUD_DATA_REDIS_PASSWORD']);
+
 app.listen(8080);
 
 function handler(req,res) {
@@ -24,6 +25,20 @@ function handler(req,res) {
 
 io.sockets.on('connection', function(socket) {
   socket.on('register', function(data) {
+    //Let's leave all the other rooms before joining a new one
+    var myrooms = io.sockets.manager.roomClients[socket.id];
+    for(var k in myrooms) {
+      if ( k != '' ) {
+        var room = k.substr(1);
+        socket.leave(room);
+        removeUser( room, data.name, function(err, rep) {
+          socket.emit('ack', "leaving room " + room);
+        });
+      }
+    }
+    // DEBUG -- verify that only the empty room is there
+    //console.log(io.sockets.manager.roomClients[socket.id]);
+    // END DEBUG
     socket.join(data.group);
     addUser(data.group, data.name, function(err,rep) {
      socket.emit('ack', rep);
@@ -58,10 +73,15 @@ io.sockets.on('connection', function(socket) {
 
 function addUser( group, name, callback ) {
   client.sadd( "groups:" + group, name, callback );
+  client.sadd( "groups", group );
 }
 
 function removeUser( group, name, callback ) {
   client.srem( "groups:" + group, name, callback );
+  client.exists( "groups:" + group, function(err, rep) {
+    if (rep == 0)
+      client.srem( "groups", group );
+  });
 }
 
 function listUsers( group, callback ) {
