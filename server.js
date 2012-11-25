@@ -32,7 +32,10 @@ io.sockets.on('connection', function(socket) {
         var room = k.substr(1);
         socket.leave(room);
         removeUser( room, data.name, function(err, rep) {
-          socket.emit('ack', "leaving room " + room);
+          //Tell the old group about the updated userlist
+          listUsers( room, function(err, rep) {
+            io.sockets.in(room).emit('userlist', rep);
+          });
         });
       }
     }
@@ -42,7 +45,14 @@ io.sockets.on('connection', function(socket) {
     socket.join(data.group);
     addUser(data.group, data.name, function(err,rep) {
      socket.emit('ack', rep);
-     listUsers(data.group, function(err,rep) {io.sockets.in(data.group).emit('userlist',rep)});
+     //Update the new group with the new user list
+     listUsers(data.group, function(err,rep) {
+       io.sockets.in(data.group).emit('userlist',rep)
+     });
+     //Let everyone know about the new room list
+     getGroupList(function(err, rep) {
+       io.sockets.emit('grouplist', rep);
+     })
     });
     socket.on('disconnect', function() {
       console.log("Received Disconnect");
@@ -63,6 +73,9 @@ io.sockets.on('connection', function(socket) {
       io.sockets.in(data.group).emit('newmessage', x);
     });
   });
+  socket.on('grouplisting', function() {
+    getGroupList(function(err, rep) { socket.emit('grouplist', rep); });
+  })
   socket.on('getmessagelist', function(data) {
     messageList( data.group, data.max, function(err,rep){
       socket.emit('messagelist', rep);
@@ -86,6 +99,14 @@ function removeUser( group, name, callback ) {
 
 function listUsers( group, callback ) {
   client.smembers( "groups:" + group, callback );
+}
+
+function getGroupList( callback ) {
+  client.smembers( "groups", callback );
+}
+
+function setInit( group, uname, initiative, callback ) {
+  client.hmset( "groups:" + group + ":init", {username: uname, init: initative}, callback );
 }
 
 function readMessage( id, callback ) {

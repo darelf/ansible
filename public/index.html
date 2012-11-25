@@ -22,6 +22,10 @@
 		  <label for="msginput">Msg</label>
 		  <input type="text" id="msginput" class="input-large" placeholder="What's up, yo?"/>
 		  <button id="sendbutton" class="btn">Send</button>
+		</div>  	
+		<div class="well well-small">
+		  <div><em>Logged In Users</em> <span id="numusers" class="badge badge-inverse">0</span></div>
+		  <div id="userlist"></div>
 		</div>
 	  </div>
 	  <div class="span8">
@@ -40,11 +44,7 @@
 	  	  <input class="span2" id="gameselectInput" type="text" placeholder="default room"/>
 	  	  <button class="btn btn-info" type="button" id="gameselectButton">Go</button>
 	  	</div>
-	  	
-		<div class="well well-small">
-		  <div><em>Logged In Users</em> <span id="numusers" class="badge badge-inverse">0</span></div>
-		  <div id="userlist"></div>
-		</div>
+
 		<ul id="chatbox" class="unstyled">
 		</ul>
 	  </div>

@@ -1,7 +1,8 @@
+
 function setup() {
   $("#sendbutton").attr("disabled", "disabled");
   // Get this party started
-  var socket = start_sockets('ws://localhost:8080');
+  var socket = start_sockets('wss://localhost:8080');
   // set up some events
   $("#login").on('click', function() { if ( $("#uname").val() != "" ) {
       socket.emit('register', {group: 'default', name: $("#uname").val()});
@@ -75,6 +76,13 @@ function start_sockets(url) {
    data.forEach(function(val, i) {
      $("#userlist").append("<span class='label label-info'>" + val + "</span> ");
    });
+  });
+
+  socket.on('grouplist', function(data) {
+    $("#gameselectMenu").html("");
+    data.forEach(function(val, i) {
+      $("#gameselectMenu").append('<li><a href="#">' + val + '</a></li>');
+    })
   });
 
   return socket;
