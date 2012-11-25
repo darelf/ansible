@@ -9,15 +9,18 @@ function setup() {
       $("#sendbutton").removeAttr("disabled");
     }
   });
-  $("#sendbutton").on('click', function() {
-    if ($("#msginput").val() != "")
-      socket.emit('grpmsg', {group: "default",
-                              name: $("#uname").val(),
-                              text: $("#msginput").val()});
+  
+  $("#sendbutton").on('click', function() { sendMessage(socket); });
+
+  $("#msginput").on('keyup', function(ev) {
+    if (ev.which == 13)
+      sendMessage(socket);
   });
+
   $("#gameselectMenu").on('click', function(ev) {
     $("#gameselectInput").val($(ev.target).text());
   });
+
   $("#gameselectButton").on('click', function() {
     var room = $("#gameselectInput").val();
     if (room == '')
@@ -26,6 +29,13 @@ function setup() {
       socket.emit('register', {group: room, name: $("#uname").val()});
     }
   });
+}
+
+function sendMessage(sock) {
+  if ($("#msginput").val() != "")
+  sock.emit('grpmsg', {group: "default",
+                       name: $("#uname").val(),
+                       text: $("#msginput").val()});
 }
 
 function displayWarning(txt) {
