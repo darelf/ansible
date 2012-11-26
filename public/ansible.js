@@ -4,8 +4,11 @@ function setup() {
   // Get this party started
   var socket = start_sockets('wss://localhost:8080');
   // set up some events
-  $("#login").on('click', function() { if ( $("#uname").val() != "" ) {
-      socket.emit('register', {group: 'default', name: $("#uname").val()});
+  $("#login").on('click', function() { 
+    if ( $("#uname").val() != "" ) {
+      var room = $("#gameselectInput").val();
+      if (room == '') room = 'default';
+      socket.emit('register', {group: room, name: $("#uname").val()});
       $("#sendbutton").removeAttr("disabled");
     }
   });

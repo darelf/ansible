@@ -7,6 +7,7 @@ var file = new st.Server('./public');
 
 var app = require('http').createServer(handler),
   io = require('socket.io').listen(app),
+  crypto = require('crypto'),
   redis = require('redis'),
   client = redis.createClient(env['DOTCLOUD_DATA_REDIS_PORT'],
                               env['DOTCLOUD_DATA_REDIS_HOST']);
@@ -25,6 +26,17 @@ function handler(req,res) {
 
 io.sockets.on('connection', function(socket) {
   socket.on('register', function(data) {
+    if (data.token) {
+      checkUserToken(function(itworked) {
+        if (itworked) {
+
+        }
+      });
+    } else {
+      registerNewUser(socket, data, function(itworked) {
+        socket.emit('ack', itworked);
+      });
+    }
     //Let's leave all the other rooms before joining a new one
     var myrooms = io.sockets.manager.roomClients[socket.id];
     for(var k in myrooms) {
@@ -97,6 +109,17 @@ function removeUser( group, name, callback ) {
   });
 }
 
+function removeUserFromAllGroups( name ) {
+  client.smembers( "groups", function(err,rep) {
+    for(int i = 0; i < rep.length; i++) {
+      var group = rep[i];
+      removeUser(group, name, function(err,rep) {
+        listUsers(group, function(err,rep) { io.sockets.in(group).emit('userlist', rep)});
+      });
+    }
+  });
+}
+
 function listUsers( group, callback ) {
   client.smembers( "groups:" + group, callback );
 }
@@ -140,3 +163,48 @@ function sendGroupMessage( group, uname, message, callback ) {
   });
 }
 
+/* New user token system, 24 byte base64 random data */
+function getNewToken() {
+  return crypto.randomBytes(24).toString('base64');
+}
+
+function registerNewUserToken(user, callback) {
+  var token = getNewToken();
+  client.exists(token, function(err,rep) {
+    if ( rep == 0 ) {
+      client.setex(token, 1800, user);
+      callback(token);
+    } else {
+      registerNewUserToken(user, callback);
+    }
+  });
+}
+
+function checkUserToken(user, token, callback) {
+  client.get(token, function(err, rep) {
+    callback( (rep == token) );
+  });
+}
+
+function registerNewUser(socket, data, callback) {
+  var token = registerNewUserToken(data.name);
+
+  socket.join(data.group);
+  addUser(data.group, data.name, function(err,rep) {
+   callback(rep);
+   //Update the new group with the new user list
+   listUsers(data.group, function(err,rep) {
+     io.sockets.in(data.group).emit('userlist',rep);
+   });
+   //Let everyone know about the new room list
+   getGroupList(function(err, rep) {
+     io.sockets.emit('grouplist', rep);
+   })
+  });
+  socket.on('disconnect', function() {
+    console.log("Received Disconnect");
+    removeUser(data.group, data.name, function(err,rep) {
+      listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep)});
+    });
+  });
+}
