@@ -70,6 +70,10 @@ This is a list of all the rooms(groups) that are currently occupied. The way the
 works there are no empty rooms, and rooms are created as they are joined. Any time someone
 joins any group, this event is sent to every connection to let clients update their list.
 
+### `updateinit`
+This is an update notification of the intiative for a user. This is sent only to the group
+that user is in. Contains only `{name: <usernmae>, init: <init>}`
+
 ## Events Clients Send
 
 ### `register {group: <group>, name: <name>, token: <token>}`
@@ -95,3 +99,6 @@ sets of usernames).
 ### `messagelist {group: <group>, max: <max messages>}`
 Request the `<max>` most recent messages in a group. Don't know how useful this is, maybe for a
 catchup feature?
+
+### `changeinit {name: <username>, token: <token>, init: <init>}`
+Change a user's initiative number. If init is not a number, I have no idea what will happen. Evil, probably.
