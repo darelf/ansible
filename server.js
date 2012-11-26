@@ -25,11 +25,14 @@ function handler(req,res) {
 }
 
 io.sockets.on('connection', function(socket) {
+  console.log("Client connected using " + io.transports[socket.id].name);
   socket.on('register', function(data) {
     if (data.token) {
       checkUserToken(function(itworked) {
         if (itworked) {
-
+          moveUserGroup(socket, data, function(err,rep) {
+            
+          });
         }
       });
     } else {
@@ -37,41 +40,6 @@ io.sockets.on('connection', function(socket) {
         socket.emit('ack', itworked);
       });
     }
-    //Let's leave all the other rooms before joining a new one
-    var myrooms = io.sockets.manager.roomClients[socket.id];
-    for(var k in myrooms) {
-      if ( k != '' ) {
-        var room = k.substr(1);
-        socket.leave(room);
-        removeUser( room, data.name, function(err, rep) {
-          //Tell the old group about the updated userlist
-          listUsers( room, function(err, rep) {
-            io.sockets.in(room).emit('userlist', rep);
-          });
-        });
-      }
-    }
-    // DEBUG -- verify that only the empty room is there
-    //console.log(io.sockets.manager.roomClients[socket.id]);
-    // END DEBUG
-    socket.join(data.group);
-    addUser(data.group, data.name, function(err,rep) {
-     socket.emit('ack', rep);
-     //Update the new group with the new user list
-     listUsers(data.group, function(err,rep) {
-       io.sockets.in(data.group).emit('userlist',rep)
-     });
-     //Let everyone know about the new room list
-     getGroupList(function(err, rep) {
-       io.sockets.emit('grouplist', rep);
-     })
-    });
-    socket.on('disconnect', function() {
-      console.log("Received Disconnect");
-      removeUser(data.group, data.name, function(err,rep) {
-        listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep)});
-      });
-    });
   });
   socket.on('users', function(data) {
     listUsers(data.group, function(err,rep) { socket.emit('userlist', rep); } );
@@ -111,7 +79,7 @@ function removeUser( group, name, callback ) {
 
 function removeUserFromAllGroups( name ) {
   client.smembers( "groups", function(err,rep) {
-    for(int i = 0; i < rep.length; i++) {
+    for(var i = 0; i < rep.length; i++) {
       var group = rep[i];
       removeUser(group, name, function(err,rep) {
         listUsers(group, function(err,rep) { io.sockets.in(group).emit('userlist', rep)});
@@ -186,9 +154,47 @@ function checkUserToken(user, token, callback) {
   });
 }
 
-function registerNewUser(socket, data, callback) {
-  var token = registerNewUserToken(data.name);
+function moveUserGroup(socket, data, callback) {
+  //Let's leave all the other rooms before joining a new one
+  var myrooms = io.sockets.manager.roomClients[socket.id];
+  for(var k in myrooms) {
+    if ( k != '' ) {
+      var room = k.substr(1);
+      socket.leave(room);
+      removeUser( room, data.name, function(err, rep) {
+        //Tell the old group about the updated userlist
+        listUsers( room, function(err, rep) {
+          io.sockets.in(room).emit('userlist', rep);
+        });
+      });
+    }
+  }
+  //join the new room
+  socket.join(data.group);
+  addUser(data.group, data.name, function(err,rep) {
+   callback(err, rep);
+   //Update the new group with the new user list
+   listUsers(data.group, function(err,rep) {
+     io.sockets.in(data.group).emit('userlist',rep)
+   });
+   //Let everyone know about the new room list
+   getGroupList(function(err, rep) {
+     io.sockets.emit('grouplist', rep);
+   })
+  });
+  socket.on('disconnect', function() {
+    console.log("Received Disconnect");
+    removeUser(data.group, data.name, function(err,rep) {
+      listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep)});
+    });
+  });
+}
 
+function registerNewUser(socket, data, callback) {
+  registerNewUserToken(data.name, function(token) {
+    socket.emit('newtoken', token);
+  });
+  
   socket.join(data.group);
   addUser(data.group, data.name, function(err,rep) {
    callback(rep);
@@ -201,10 +207,11 @@ function registerNewUser(socket, data, callback) {
      io.sockets.emit('grouplist', rep);
    })
   });
+  
   socket.on('disconnect', function() {
     console.log("Received Disconnect");
     removeUser(data.group, data.name, function(err,rep) {
-      listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep)});
+      listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep) });
     });
   });
 }

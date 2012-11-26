@@ -1,17 +1,11 @@
+var user_token = "";
 
 function setup() {
   $("#sendbutton").attr("disabled", "disabled");
   // Get this party started
   var socket = start_sockets('wss://localhost:8080');
   // set up some events
-  $("#login").on('click', function() { 
-    if ( $("#uname").val() != "" ) {
-      var room = $("#gameselectInput").val();
-      if (room == '') room = 'default';
-      socket.emit('register', {group: room, name: $("#uname").val()});
-      $("#sendbutton").removeAttr("disabled");
-    }
-  });
+  $("#login").on('click', function() { loginToRoom(socket) });
   
   $("#sendbutton").on('click', function() { sendMessage(socket); });
 
@@ -24,14 +18,18 @@ function setup() {
     $("#gameselectInput").val($(ev.target).text());
   });
 
-  $("#gameselectButton").on('click', function() {
+  $("#gameselectButton").on('click', function() { loginToRoom(socket) });
+}
+
+function loginToRoom(socket) {
+  if ( $("#uname").val() != "" ) {
     var room = $("#gameselectInput").val();
-    if (room == '')
-      room = 'default';
-    if ( $("#uname").val() != "" ) {
-      socket.emit('register', {group: room, name: $("#uname").val()});
-    }
-  });
+    if (room == '') room = 'default';
+    var vals = {group: room, name: $("#uname").val()};
+    if (user_token != '') vals['token'] = user_token;
+    socket.emit('register', vals);
+    $("#sendbutton").removeAttr("disabled");
+  }
 }
 
 function sendMessage(sock) {
@@ -55,6 +53,10 @@ function displayMessage(m) {
 
 function start_sockets(url) {
   var socket = io.connect(url);
+  socket.on('newtoken', function(token) {
+    user_token = token;
+  });
+  
   socket.on('channel', function(data) {
     console.log(data.name);
     //$("#channel").val(data.name);
