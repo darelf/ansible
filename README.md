@@ -44,6 +44,10 @@ messages because this is more likely to be useful. Group messages for people who
 the same table together is at the point of uselessness. However, sekret GM notes... yes, that is
 useful.
 
+To that end, the server currently only allows a user to be in one room at a time. I'm not sure I care
+about changing this right now. When you want to change rooms, you "register" again with the same
+user name in a new room with your server-generated token.
+
 ## Events Sent to Clients
 
 ### `ack`

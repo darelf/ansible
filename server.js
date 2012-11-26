@@ -28,14 +28,18 @@ io.sockets.on('connection', function(socket) {
   console.log("Client connected using " + io.transports[socket.id].name);
   socket.on('register', function(data) {
     if (data.token) {
-      checkUserToken(function(itworked) {
+      console.log("user has a token: " + data.token);
+      checkUserToken(data.name, data.token, function(itworked) {
+        console.log(itworked);
         if (itworked) {
+          console.log("user token checked out");
           moveUserGroup(socket, data, function(err,rep) {
-            
+            socket.emit('ack', rep);
           });
         }
       });
     } else {
+      console.log("user does not have a token");
       registerNewUser(socket, data, function(itworked) {
         socket.emit('ack', itworked);
       });
@@ -140,6 +144,7 @@ function registerNewUserToken(user, callback) {
   var token = getNewToken();
   client.exists(token, function(err,rep) {
     if ( rep == 0 ) {
+      console.log("setting token for " + user + " to " + token);
       client.setex(token, 1800, user);
       callback(token);
     } else {
@@ -150,7 +155,7 @@ function registerNewUserToken(user, callback) {
 
 function checkUserToken(user, token, callback) {
   client.get(token, function(err, rep) {
-    callback( (rep == token) );
+    callback( (rep == user) );
   });
 }
 
@@ -161,6 +166,7 @@ function moveUserGroup(socket, data, callback) {
     if ( k != '' ) {
       var room = k.substr(1);
       socket.leave(room);
+      console.log("removing user " + data.name + " from " + room);
       removeUser( room, data.name, function(err, rep) {
         //Tell the old group about the updated userlist
         listUsers( room, function(err, rep) {
