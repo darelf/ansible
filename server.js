@@ -34,7 +34,8 @@ io.sockets.on('connection', function(socket) {
         if (itworked) {
           console.log("user token checked out");
           moveUserGroup(socket, data, function(err,rep) {
-            socket.emit('ack', rep);
+            socket.emit('ack', 1);
+            sendUserDataList(data.group);
           });
         }
       });
@@ -42,6 +43,9 @@ io.sockets.on('connection', function(socket) {
       console.log("user does not have a token");
       registerNewUser(socket, data, function(itworked) {
         socket.emit('ack', itworked);
+        changeIntiative( data.name, '0', function(err,rep) {
+          sendUserDataList(data.group);
+        });
       });
     }
   });
@@ -66,7 +70,42 @@ io.sockets.on('connection', function(socket) {
     });
   });
   //socket.emit('channel', {name: 'default'});
+  
+  /* Game specific messages */
+  socket.on('changeinit', function(data) {
+    checkUserToken( data.token, function(isok) {
+      if (isok) {
+        changeInitiative( data.name, data.init, function(err,rep) {
+          sendUserDataList( io.sockets.manager.roomClients[socket.id].substr(1) );
+        });
+      }
+    });
+  });
+  
 });
+
+/* Game specific functions */
+
+function changeIntiative( uname, initiative, callback ) {
+  console.log("setting key data:" + uname);
+  client.hmset( "data:" + uname, {name: uname, init: initiative}, callback);
+}
+
+function getUserData( name, callback ) {
+  client.hgetall( "data:" + name, callback );
+}
+
+function sendUserDataList( group ) {
+  listUsers( group, function(err, rep) {
+    rep.forEach(function(val, i) {
+      getUserData( val, function(err2, rep2) {
+        io.sockets.in(group).emit('updateinit', rep2);
+      });
+    });
+  });
+}
+
+/* Basic functions */
 
 function addUser( group, name, callback ) {
   client.sadd( "groups:" + group, name, callback );
@@ -98,10 +137,6 @@ function listUsers( group, callback ) {
 
 function getGroupList( callback ) {
   client.smembers( "groups", callback );
-}
-
-function setInit( group, uname, initiative, callback ) {
-  client.hmset( "groups:" + group + ":init", {username: uname, init: initative}, callback );
 }
 
 function readMessage( id, callback ) {

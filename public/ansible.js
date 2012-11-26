@@ -1,11 +1,21 @@
 var user_token = "";
+var condition = ['bleed', 'blinded', 'broken', 'confused', 'cowering', 'dazed', 'dazzled', 'dead',
+                 'deafened', 'disabled', 'dying', 'energy drained', 'entangled', 'exhausted',
+                 'fascinated', 'fatigued', 'flat-footed', 'frightened', 'grappled', 'helpless',
+                 'incorporeal', 'invisible', 'nauseated', 'panicked', 'paralyzed', 'petrified',
+                 'pinned', 'prone', 'shaken', 'sickened', 'sinking', 'stable', 'staggered',
+                 'stunned', 'unconscious'];
+var user_init = {};
 
 function setup() {
   $("#sendbutton").attr("disabled", "disabled");
   // Get this party started
   var socket = start_sockets('wss://localhost:8080');
   // set up some events
-  $("#login").on('click', function() { loginToRoom(socket) });
+  $("#login").on('click', function() {
+    loginToRoom(socket);
+    $("#login").attr("disabled", "disabled");
+  });
   
   $("#sendbutton").on('click', function() { sendMessage(socket); });
 
@@ -42,12 +52,24 @@ function sendMessage(sock) {
 function displayWarning(txt) {
   $("#alertarea").append('<div class="alert alert-error">' +
     '<button type="button" class="close" data-dismiss="alert">x</button><strong>Hold Up!</strong> ' +
-     txt + '</div>');
+    txt + '</div>');
 }
 
 function displayMessage(m) {
   if (m.type == 'chat') {
     $("#chatbox").append('<li class="well well-small">' + m.text + '</li>');
+  }
+}
+
+function updateInitList() {
+  var sortme = [];
+  for( var k in user_init ) sortme.push([k, user_init[k]]);
+  sortme.sort(function(a,b) { return a[1] - b[1]; });
+  console.log(sortme);
+  var e = $("#initiativelist");
+  e.html("");
+  for( var i = 0; i < sortme.length; i++ ) {
+    e.append('<li><span class="text-success">' + sortme[i][0] + '</span></li>');
   }
 }
 
@@ -85,19 +107,23 @@ function start_sockets(url) {
   });
   
   socket.on('userlist', function(data) {
-   console.log(data);
-   $("#userlist").html("");
-   $("#numusers").html(data.length);
-   data.forEach(function(val, i) {
-     $("#userlist").append("<span class='label label-info'>" + val + "</span> ");
-   });
+    var room = $("#gameselectInput").val();
+    if (room == '') room = 'default';
+    console.log(data);
+    $("#roomname").html( "'" + room  + "'" );
+    $("#numusers").html(data.length);
+  });
+  
+  socket.on('updateinit', function(data) {
+    user_init[data.name] = data.init;
+    updateInitList();
   });
 
   socket.on('grouplist', function(data) {
     $("#gameselectMenu").html("");
     data.forEach(function(val, i) {
       $("#gameselectMenu").append('<li><a href="#">' + val + '</a></li>');
-    })
+    });
   });
 
   return socket;

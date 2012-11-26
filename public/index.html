@@ -5,15 +5,17 @@
   <title>Sample Client</title>
   <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
 	<style>
-	  body { background-image: url('debut_light.png'); }
+	  body { background-image: url('images/debut_light.png'); }
 	  .container-fluid { margin-top: 10px; }
 	  #alertarea { min-height: 2em; }
+	  #initiativelist > li { border-bottom: 1px solid grey; }
 	</style>
 </head>
 <body>
   <div class="container-fluid">
 	<div class="row-fluid">
 	  <div class="span4">
+		<img id="sample_image" src="images/bleed.png" width="25" class="img-circle"/>
 		<div class="input-append">
 		  <label for="uname">User</label>
 		  <input type="text" id="uname" class="input-small" placeholder="user name"/>
@@ -24,9 +26,14 @@
 		  <input type="text" id="msginput" class="input-large" placeholder="What's up, yo?"/>
 		  <button id="sendbutton" class="btn">Send</button>
 		</div>  	
-		<div class="well well-small">
-		  <div><em>Logged In Users</em> <span id="numusers" class="badge badge-inverse">0</span></div>
-		  <div id="userlist"></div>
+		<div>
+		  <div><em>Users in <span id="roomname">Default Room</span></em>
+			<span id="numusers" class="badge badge-inverse">0</span></div>
+		  <div class="well">
+			<ul id="initiativelist" class="unstyled">
+			  <li><span class="text-success">User Name</span></li>
+			</ul>
+		  </div>
 		</div>
 	  </div>
 	  <div class="span8">
