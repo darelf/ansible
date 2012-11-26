@@ -79,7 +79,7 @@ function start_sockets(url) {
   socket.on('ack', function(data) {
     console.log(data);
     if (data == 0)
-      displayWarning("Looks like that user is already joined to that room.");
+      displayWarning("Looks like that user name is already taken.");
     else
       $(".alert").alert("close");
   });

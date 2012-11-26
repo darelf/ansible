@@ -31,6 +31,19 @@ of cool stuff in the client, whether a web page, or mobile app, or regular deskt
 dashboard widget, or etc. Websockets are just sockets that use an initial http handshake but
 then work like regular sockets.
 
+## Basic Premise
+
+### Groups
+The idea behind the groups is that each one represents a game. That is, everyone is sitting around
+the table ready to get their D&D on, and connects their phone/tablet/laptop/etc to the server and
+everyone joins the same group.
+
+### Communication
+There is a basic text message system. Yes, it has group messages, however, it needs to have private
+messages because this is more likely to be useful. Group messages for people who are all sitting at
+the same table together is at the point of uselessness. However, sekret GM notes... yes, that is
+useful.
+
 ## Events Sent to Clients
 
 ### `ack`
@@ -55,10 +68,10 @@ joins any group, this event is sent to every connection to let clients update th
 
 ## Events Clients Send
 
-### `register {group: <group>, name: <name>}`
+### `register {group: <group>, name: <name>, token: <token>}`
 This attempts to register a username in a group. If it works, that user joins that room.
-If that username is already in that room, it fails. (When I implement hash tokens, this
-will also fail if you aren't the one who registered that username)
+If that username is already in that room, it fails. The token is optional. If you send it,
+it must a token that is associated with that user name.
 
 ### `users {group: <group>}`
 The client is asking for an updated user list for the room.
