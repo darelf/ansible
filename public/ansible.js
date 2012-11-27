@@ -6,8 +6,10 @@ var condition = ['bleed', 'blinded', 'broken', 'confused', 'cowering', 'dazed', 
                  'pinned', 'prone', 'shaken', 'sickened', 'sinking', 'stable', 'staggered',
                  'stunned', 'unconscious'];
 var user_list = [];
+var logged_on = false;
 
 function setup() {
+  $(".tip").tooltip();
   $("#sendbutton").attr("disabled", "disabled");
   // Get this party started
   var socket = start_sockets('wss://lxfinkbeinerd:8080');
@@ -29,6 +31,8 @@ function setup() {
   });
 
   $("#gameselectButton").on('click', function() { loginToRoom(socket) });
+  
+  $("#statusbtn").on('click', function() { sendStatusUpdate(socket); });
 }
 
 function loginToRoom(socket) {
@@ -50,6 +54,15 @@ function sendMessage(sock) {
                        text: $("#msginput").val()});
 }
 
+function sendStatusUpdate(sock) {
+  if (logged_on) {
+    var data = {name: $("#uname").val(),
+                token: user_token,
+                init: $("#initiative").val() };
+    sock.emit('changeinit', data);
+  }
+}
+
 function displayWarning(txt) {
   $("#alertarea").append('<div class="alert alert-error fade in">' +
     '<button type="button" class="close" data-dismiss="alert">x</button><strong>Hold Up!</strong> ' +
@@ -69,12 +82,12 @@ function displayMessage(m) {
 }
 
 function updateInitList() {
-  user_list.sort(function(a,b) { return a.init - b.init; });
+  user_list.sort(function(a,b) { return b.init - a.init; });
   console.log(user_list);
-  var e = $("#initiativelist");
-  e.html("");
+  $("#initiativelist").html("");
   for( var i = 0; i < user_list.length; i++ ) {
-    e.append('<li><span class="text-success">' + user_list[i].name + '</span></li>');
+    $("#initiativelist").append('<li id="user:' + user_list[i] + '"><span class="badge badge-info">' + user_list[i].init +
+                                '</span> <span class="text-success">' + user_list[i].name + '</span></li>');
   }
 }
 
@@ -88,6 +101,7 @@ function start_sockets(url) {
   socket.on('disconnect', function() {
     displayWarning("Looks like you were disconnected and logged out by the system, chief.");
     $("#login").removeAttr("disabled");
+    logged_on = false;
   });
   
   socket.on('newtoken', function(token) {
@@ -117,8 +131,10 @@ function start_sockets(url) {
     console.log(data);
     if (data == 0)
       displayWarning("Looks like that user name is already taken.");
-    else
+    else {
       $(".alert").alert("close");
+      logged_on = true;
+    }
   });
   
   socket.on('userlist', function(data) {
@@ -131,7 +147,7 @@ function start_sockets(url) {
   socket.on('clearuserlist', function() {
     console.log("clearing user list");
     user_list = [];
-  })
+  });
   
   socket.on('updateinit', function(data) {
     user_list.push(data);

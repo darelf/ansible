@@ -35,7 +35,6 @@ io.sockets.on('connection', function(socket) {
           console.log("user token checked out");
           moveUserGroup(socket, data, function(err,rep) {
             socket.emit('ack', 1);
-            sendUserDataList(data.group);
           });
         }
       });
@@ -43,9 +42,11 @@ io.sockets.on('connection', function(socket) {
       console.log("user does not have a token");
       registerNewUser(socket, data, function(itworked) {
         socket.emit('ack', itworked);
-        changeIntiative( data.name, '0', function(err,rep) {
-          sendUserDataList(data.group);
-        });
+        if (itworked) {
+          changeInitiative(data.name, '0', function(err, rep) {
+            if (err) console.log(err);  
+          });
+        }
       });
     }
   });
@@ -73,10 +74,16 @@ io.sockets.on('connection', function(socket) {
   
   /* Game specific messages */
   socket.on('changeinit', function(data) {
-    checkUserToken( data.token, function(isok) {
+    checkUserToken( data.name, data.token, function(isok) {
       if (isok) {
         changeInitiative( data.name, data.init, function(err,rep) {
-          sendUserDataList( io.sockets.manager.roomClients[socket.id].substr(1) );
+          var myrooms = io.sockets.manager.roomClients[socket.id];
+          for(var k in myrooms) {
+            if ( k != '' ) {
+              var room = k.substr(1);
+              sendUserDataList( room );
+            }
+          }
         });
       }
     });
@@ -85,8 +92,23 @@ io.sockets.on('connection', function(socket) {
 });
 
 /* Game specific functions */
+function setGM( group, uname, callback ) {
+  client.set( "groups:gm:" + group, uname, callback );
+}
 
-function changeIntiative( uname, initiative, callback ) {
+function getGM( group, callback ) {
+  client.get( "groups:gm:" + group, callback );
+}
+
+function setCurrentInitiative( group, uname, callback ) {
+  client.set( "groups:curinit:" + group, uname, callback);
+}
+
+function getCurrentInitiative( group, callback ) {
+  client.get( "groups:curinit:" + group, callback );
+}
+
+function changeInitiative( uname, initiative, callback ) {
   console.log("setting key data:" + uname);
   client.hmset( "data:" + uname, {name: uname, init: initiative}, callback);
 }
@@ -183,6 +205,7 @@ function registerNewUserToken(user, callback) {
     if ( rep == 0 ) {
       console.log("setting token for " + user + " to " + token);
       client.setex(token, 1800, user);
+      client.setex( "users:" + user, 1800, token );
       callback(token);
     } else {
       registerNewUserToken(user, callback);
@@ -223,10 +246,15 @@ function moveUserGroup(socket, data, callback) {
    //Let everyone know about the new room list
    getGroupList(function(err, rep) {
      io.sockets.emit('grouplist', rep);
-   })
+   });
+   sendUserDataList(data.group);
   });
   socket.on('disconnect', function() {
     console.log("Received Disconnect");
+    //Expire token.. this leave the opposite, but that can be
+    //considered a feature in this case.
+    client.del(data.name);
+
     removeUser(data.group, data.name, function(err,rep) {
       listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep)});
     });
@@ -234,27 +262,38 @@ function moveUserGroup(socket, data, callback) {
 }
 
 function registerNewUser(socket, data, callback) {
-  registerNewUserToken(data.name, function(token) {
-    socket.emit('newtoken', token);
-  });
-  
-  socket.join(data.group);
-  addUser(data.group, data.name, function(err,rep) {
-   callback(rep);
-   //Update the new group with the new user list
-   listUsers(data.group, function(err,rep) {
-     io.sockets.in(data.group).emit('userlist',rep);
-   });
-   //Let everyone know about the new room list
-   getGroupList(function(err, rep) {
-     io.sockets.emit('grouplist', rep);
-   })
-  });
-  
-  socket.on('disconnect', function() {
-    console.log("Received Disconnect");
-    removeUser(data.group, data.name, function(err,rep) {
-      listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep) });
-    });
+  client.exists( data.name, function(err,rep) {
+    if (rep == 0) {
+      registerNewUserToken(data.name, function(token) {
+        socket.emit('newtoken', token);
+      });
+      
+      socket.join(data.group);
+      addUser(data.group, data.name, function(err,rep) {
+        callback(rep);
+        //Update the new group with the new user list
+        listUsers(data.group, function(err,rep) {
+          io.sockets.in(data.group).emit('userlist',rep);
+        });
+        //Let everyone know about the new room list
+        getGroupList(function(err, rep) {
+          io.sockets.emit('grouplist', rep);
+        });
+        sendUserDataList(data.group);
+      });
+      
+      socket.on('disconnect', function() {
+        console.log("Received Disconnect");
+        //Expire token.. this leave the opposite, but that can be
+        //considered a feature in this case.
+        client.del(data.name);
+        removeUser(data.group, data.name, function(err,rep) {
+          listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep) });
+        });
+      });
+    } else {
+      //Let the user know this name is already taken
+      callback(0);
+    }
   });
 }

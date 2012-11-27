@@ -8,14 +8,14 @@
 	  body { background-image: url('images/debut_light.png'); }
 	  .container-fluid { margin-top: 10px; }
 	  #alertarea { min-height: 2em; }
-	  #initiativelist > li { border-bottom: 1px solid grey; }
+	  #initiativelist > li { border-bottom: 1px solid grey; line-height: 2em; }
+	  #initiative { width: 30px; text-align: center; }
 	</style>
 </head>
 <body>
   <div class="container-fluid">
 	<div class="row-fluid">
 	  <div class="span4">
-		<img id="sample_image" src="images/bleed.png" width="25" class="img-circle"/>
 		<div class="input-append">
 		  <label for="uname">User</label>
 		  <input type="text" id="uname" class="input-small" placeholder="user name"/>
@@ -27,11 +27,10 @@
 		  <button id="sendbutton" class="btn">Send</button>
 		</div>  	
 		<div>
-		  <div><em>Users in <span id="roomname">Default Room</span></em>
-			<span id="numusers" class="badge badge-inverse">0</span></div>
+		  <div><strong>Users in <span id="roomname">Default Room</span>:</strong>
+			<span id="numusers">0</span></div>
 		  <div class="well">
 			<ul id="initiativelist" class="unstyled">
-			  <li><span class="text-success">User Name</span></li>
 			</ul>
 		  </div>
 		</div>
@@ -52,7 +51,19 @@
 	  	  <input class="span2" id="gameselectInput" type="text" placeholder="default room"/>
 	  	  <button class="btn btn-info" type="button" id="gameselectButton">Go</button>
 	  	</div>
-
+		<div class="form-inline">
+		  <label for="initiative">Init</label>
+		  <input id="initiative" type="text" placeholder="0"/>
+		  <button id="statusbtn" type="button" class="btn tip" title="send status changes">Update</button>
+		</div>
+		<hr/>
+		<div class="btn-group" data-toggle="buttons-checkbox">
+		  <button id="btn-bleeding" type="button" class="btn btn-warning"><img class="tip" title="Bleeding" src="images/bleed.png" width="20"/></button>
+		  <button id="btn-blinded" type="button" class="btn btn-warning"><img class="tip" title="Blinded" src="images/blinded.png" width="20"/></button>
+		  <button id="btn-dazed" type="button" class="btn btn-warning"><img class="tip" title="Dazed" src="images/dazed.png" width="20"/></button>
+		  <button id="btn-confused" type="button" class="btn btn-warning"><img class="tip" title="Confused" src="images/confused.png" width="20"/></button>
+		  <button id="btn-dying" type="button" class="btn btn-warning"><img class="tip" title="Dying" src="images/dying.png" width="20"/></button>
+		</div>
 		<ul id="chatbox" class="unstyled">
 		</ul>
 	  </div>
