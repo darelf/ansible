@@ -91,8 +91,10 @@ io.sockets.on('connection', function(socket) {
   });
   
   socket.on('becomegm', function(data) {
+    console.log("Someone wants to be GM: " + data.name);
     checkUserToken( data.name, data.token, function(isok) {
       if (isok) {
+        console.log("good token");
         getGM( data.group, function(err,rep) {
           if (rep) {
             socket.emit('noway', {message: "There's already a GM for this room."});
@@ -261,16 +263,22 @@ function moveUserGroup(socket, data, callback) {
   //join the new room
   socket.join(data.group);
   addUser(data.group, data.name, function(err,rep) {
-   callback(err, rep);
-   //Update the new group with the new user list
-   listUsers(data.group, function(err,rep) {
-     io.sockets.in(data.group).emit('userlist',rep)
-   });
-   //Let everyone know about the new room list
-   getGroupList(function(err, rep) {
-     io.sockets.emit('grouplist', rep);
-   });
-   sendUserDataList(data.group);
+    callback(err, rep);
+    //Update the new group with the new user list
+    listUsers(data.group, function(err,rep) {
+      io.sockets.in(data.group).emit('userlist',rep)
+    });
+    //Let everyone know about the new room list
+    getGroupList(function(err, rep) {
+      io.sockets.emit('grouplist', rep);
+    });
+    sendUserDataList(data.group);
+    getGM( data.group, function(err,rep) {
+      if (rep)
+        socket.emit('newgm', rep);
+      else
+        socket.emit('newgm', '');
+    });
   });
   socket.on('disconnect', function() {
     console.log("Received Disconnect");
@@ -303,6 +311,12 @@ function registerNewUser(socket, data, callback) {
           io.sockets.emit('grouplist', rep);
         });
         sendUserDataList(data.group);
+        getGM( data.group, function(err,rep) {
+          if (rep)
+            socket.emit('newgm', rep);
+          else
+            socket.emit('newgm', '');
+        });
       });
       
       socket.on('disconnect', function() {

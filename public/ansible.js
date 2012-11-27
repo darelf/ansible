@@ -7,13 +7,14 @@ var condition = ['bleed', 'blinded', 'broken', 'confused', 'cowering', 'dazed', 
                  'stunned', 'unconscious'];
 var user_list = [];
 var logged_on = false;
+var gm = '';
 
 function setup() {
   $(".tip").tooltip();
   $("#sendbutton").attr("disabled", "disabled");
   $("#becomegm").attr("disabled", "disabled");
   // Get this party started
-  var socket = start_sockets('wss://localhost:8080');
+  var socket = start_sockets('wss://lxfinkbeinerd:8080');
   // set up some events
   $("#login").on('click', function() {
     loginToRoom(socket);
@@ -34,6 +35,12 @@ function setup() {
   $("#gameselectButton").on('click', function() { loginToRoom(socket) });
   
   $("#statusbtn").on('click', function() { sendStatusUpdate(socket); });
+  
+  $("#becomegm").on('click', function() {
+    var room = $("#gameselectInput").val();
+    if (room == '') room = 'default';
+    socket.emit('becomegm', { name: $("#uname").val(), token: user_token, group: room });
+  });
 }
 
 function loginToRoom(socket) {
@@ -83,13 +90,15 @@ function displayMessage(m) {
 }
 
 function updateInitList() {
+  console.log("updating list");
   user_list.sort(function(a,b) { return b.init - a.init; });
-  console.log(user_list);
   $("#initiativelist").html("");
   for( var i = 0; i < user_list.length; i++ ) {
-    $("#initiativelist").append('<li id="user:' + user_list[i] + '"><span class="badge badge-info">' + user_list[i].init +
+    $("#initiativelist").append('<li id="user-' + user_list[i].name + '"><span class="badge badge-info">' + user_list[i].init +
                                 '</span> <span class="text-success">' + user_list[i].name + '</span></li>');
   }
+  if (gm != '')
+    $("#user-" + gm).prepend('<img src="images/gm.png" width="15" class="img-circle"/>')
 }
 
 function start_sockets(url) {
@@ -136,6 +145,15 @@ function start_sockets(url) {
       $(".alert").alert("close");
       logged_on = true;
     }
+  });
+  
+  socket.on('newgm', function(data) {
+    gm = data;
+    if (gm == '')
+      $("#becomegm").removeAttr("disabled");
+    else
+      $("#becomegm").attr("disabled", "disabled");
+    updateInitList();
   });
   
   socket.on('userlist', function(data) {
