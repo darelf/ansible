@@ -96,6 +96,7 @@ function getUserData( name, callback ) {
 }
 
 function sendUserDataList( group ) {
+  io.sockets.in(group).emit('clearuserlist');
   listUsers( group, function(err, rep) {
     rep.forEach(function(val, i) {
       getUserData( val, function(err2, rep2) {
@@ -126,6 +127,7 @@ function removeUserFromAllGroups( name ) {
       var group = rep[i];
       removeUser(group, name, function(err,rep) {
         listUsers(group, function(err,rep) { io.sockets.in(group).emit('userlist', rep)});
+        sendUserDataList(group);
       });
     }
   });

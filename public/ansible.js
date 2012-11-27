@@ -5,16 +5,16 @@ var condition = ['bleed', 'blinded', 'broken', 'confused', 'cowering', 'dazed', 
                  'incorporeal', 'invisible', 'nauseated', 'panicked', 'paralyzed', 'petrified',
                  'pinned', 'prone', 'shaken', 'sickened', 'sinking', 'stable', 'staggered',
                  'stunned', 'unconscious'];
-var user_init = {};
+var user_list = [];
 
 function setup() {
   $("#sendbutton").attr("disabled", "disabled");
   // Get this party started
-  var socket = start_sockets('wss://localhost:8080');
+  var socket = start_sockets('wss://lxfinkbeinerd:8080');
   // set up some events
   $("#login").on('click', function() {
     loginToRoom(socket);
-    $("#login").attr("disabled", "disabled");
+    //$("#login").attr("disabled", "disabled");
   });
   
   $("#sendbutton").on('click', function() { sendMessage(socket); });
@@ -39,6 +39,7 @@ function loginToRoom(socket) {
     if (user_token != '') vals['token'] = user_token;
     socket.emit('register', vals);
     $("#sendbutton").removeAttr("disabled");
+    $("#login").attr("disabled", "disabled");
   }
 }
 
@@ -50,8 +51,14 @@ function sendMessage(sock) {
 }
 
 function displayWarning(txt) {
-  $("#alertarea").append('<div class="alert alert-error">' +
+  $("#alertarea").append('<div class="alert alert-error fade in">' +
     '<button type="button" class="close" data-dismiss="alert">x</button><strong>Hold Up!</strong> ' +
+    txt + '</div>');
+}
+
+function displaySuccess(txt) {
+  $("#alertarea").append('<div class="alert alert-success fade in">' +
+    '<button type="button" class="close" data-dismiss="alert">x</button> ' +
     txt + '</div>');
 }
 
@@ -62,19 +69,27 @@ function displayMessage(m) {
 }
 
 function updateInitList() {
-  var sortme = [];
-  for( var k in user_init ) sortme.push([k, user_init[k]]);
-  sortme.sort(function(a,b) { return a[1] - b[1]; });
-  console.log(sortme);
+  user_list.sort(function(a,b) { return a.init - b.init; });
+  console.log(user_list);
   var e = $("#initiativelist");
   e.html("");
-  for( var i = 0; i < sortme.length; i++ ) {
-    e.append('<li><span class="text-success">' + sortme[i][0] + '</span></li>');
+  for( var i = 0; i < user_list.length; i++ ) {
+    e.append('<li><span class="text-success">' + user_list[i].name + '</span></li>');
   }
 }
 
 function start_sockets(url) {
   var socket = io.connect(url);
+  
+  socket.on('connect', function() {
+    displaySuccess("You have been connected to the Ansible system, please log in.");
+  });
+  
+  socket.on('disconnect', function() {
+    displayWarning("Looks like you were disconnected and logged out by the system, chief.");
+    $("#login").removeAttr("disabled");
+  });
+  
   socket.on('newtoken', function(token) {
     user_token = token;
   });
@@ -82,7 +97,7 @@ function start_sockets(url) {
   socket.on('channel', function(data) {
     console.log(data.name);
     //$("#channel").val(data.name);
-    socket.emit('users', { group: 'default' });
+    socket.emit('users', { group: data.name });
   });
   
   socket.on('newmessage', function(data) {
@@ -109,13 +124,17 @@ function start_sockets(url) {
   socket.on('userlist', function(data) {
     var room = $("#gameselectInput").val();
     if (room == '') room = 'default';
-    console.log(data);
     $("#roomname").html( "'" + room  + "'" );
     $("#numusers").html(data.length);
   });
   
+  socket.on('clearuserlist', function() {
+    console.log("clearing user list");
+    user_list = [];
+  })
+  
   socket.on('updateinit', function(data) {
-    user_init[data.name] = data.init;
+    user_list.push(data);
     updateInitList();
   });
 
