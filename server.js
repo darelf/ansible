@@ -73,6 +73,7 @@ io.sockets.on('connection', function(socket) {
   //socket.emit('channel', {name: 'default'});
   
   /* Game specific messages */
+  //This one actually should be called changestatus or updateuser
   socket.on('changeinit', function(data) {
     checkUserToken( data.name, data.token, function(isok) {
       if (isok) {
@@ -83,6 +84,22 @@ io.sockets.on('connection', function(socket) {
               var room = k.substr(1);
               sendUserDataList( room );
             }
+          }
+        });
+      }
+    });
+  });
+  
+  socket.on('becomegm', function(data) {
+    checkUserToken( data.name, data.token, function(isok) {
+      if (isok) {
+        getGM( data.group, function(err,rep) {
+          if (rep) {
+            socket.emit('noway', {message: "There's already a GM for this room."});
+          } else {
+            setGM( data.group, data.name, function(err,rep) {
+              io.sockets.in(data.group).emit('newgm', data.name);
+            });
           }
         });
       }
@@ -136,10 +153,16 @@ function addUser( group, name, callback ) {
 }
 
 function removeUser( group, name, callback ) {
+  client.get( "groups:gm:" + group, function(err,rep) {
+    if ( rep == name )
+      client.del( "groups:gm:" + group );
+  });
   client.srem( "groups:" + group, name, callback );
   client.exists( "groups:" + group, function(err, rep) {
-    if (rep == 0)
+    if (rep == 0) {
       client.srem( "groups", group );
+      client.del( "groups:curinit:" + group );
+    }
   });
 }
 
