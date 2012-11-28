@@ -17,14 +17,25 @@
 	<div class="row-fluid">
 	  <div class="span4">
 		<div class="input-append">
-		  <label for="uname">User</label>
-		  <input type="text" id="uname" class="input-small" placeholder="user name"/>
+		  <input type="text" id="uname" placeholder="user name"/>
 		  <button id="login" class="btn btn-success">Connect</button>
 		  <button id="becomegm" class="tip btn btn-inverse" title="Make Me Game Master!">GM</button>
 		</div>
+		<div class="input-prepend input-append">
+	  	  <div class="btn-group">
+	  	  	<button class="btn dropdown-toggle" data-toggle="dropdown">
+	  	  	  Room
+	  	  	  <span class="caret"></span>
+	  	  	</button>
+	  	  	<ul id="gameselectMenu" class="dropdown-menu">
+	  	  	  <li><a href="#">default</a></li>
+	  	  	</ul>
+	  	  </div>
+	  	  <input id="gameselectInput" type="text" placeholder="default room"/>
+	  	  <button class="btn btn-info" type="button" id="gameselectButton">Go</button>
+	  	</div>
 		<div class="input-append">
-		  <label for="msginput">Msg</label>
-		  <input type="text" id="msginput" class="input-large" placeholder="What's up, yo?"/>
+		  <input type="text" id="msginput" placeholder="What's up, yo?"/>
 		  <button id="sendbutton" class="btn">Send</button>
 		</div>  	
 		<div>
@@ -39,19 +50,6 @@
 	  <div class="span8">
 	  	<div id="alertarea">
 	  	</div>
-	  	<div class="input-prepend input-append">
-	  	  <div class="btn-group">
-	  	  	<button class="btn dropdown-toggle" data-toggle="dropdown">
-	  	  	  Room
-	  	  	  <span class="caret"></span>
-	  	  	</button>
-	  	  	<ul id="gameselectMenu" class="dropdown-menu">
-	  	  	  <li><a href="#">default</a></li>
-	  	  	</ul>
-	  	  </div>
-	  	  <input class="span2" id="gameselectInput" type="text" placeholder="default room"/>
-	  	  <button class="btn btn-info" type="button" id="gameselectButton">Go</button>
-	  	</div>
 		<div class="form-inline">
 		  <label for="initiative">Init</label>
 		  <input id="initiative" type="text" placeholder="0"/>
@@ -59,7 +57,7 @@
 		</div>
 		<hr/>
 		<div id="status-buttons" class="btn-group" data-toggle="buttons-checkbox">
-		  <button id="btn-bleeding" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Bleeding" src="images/bleed.png" width="20"/></button>
+		  <button id="btn-bleed" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Bleeding" src="images/bleed.png" width="20"/></button>
 		  <button id="btn-blinded" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Blinded" src="images/blinded.png" width="20"/></button>
 		  <button id="btn-dazed" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Dazed" src="images/dazed.png" width="20"/></button>
 		  <button id="btn-confused" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Confused" src="images/confused.png" width="20"/></button>
