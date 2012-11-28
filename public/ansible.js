@@ -40,6 +40,7 @@ function setup() {
     var room = $("#gameselectInput").val();
     if (room == '') room = 'default';
     socket.emit('becomegm', { name: $("#uname").val(), token: user_token, group: room });
+    $(".tip").tooltip('hide');
   });
 }
 
@@ -101,11 +102,26 @@ function updateInitList() {
   user_list.sort(function(a,b) { return b.init - a.init; });
   $("#initiativelist").html("");
   for( var i = 0; i < user_list.length; i++ ) {
-    $("#initiativelist").append('<li id="user-' + user_list[i].name + '"><span class="badge badge-info">' + user_list[i].init +
-                                '</span> <span class="text-success">' + user_list[i].name + '</span></li>');
+    if (gm == user_list[i].name) {
+      $("#initiativelist").prepend('<li id="user-' + user_list[i].name + '">' +
+                                   '<img src="images/gm.png" width="15" class="img-circle"/>' +
+                                   '<span class="text-success">' + user_list[i].name + '</span></li>');
+    } else {
+      $("#initiativelist").append('<li id="user-' + user_list[i].name +
+                                  '"><span class="badge badge-info">' + user_list[i].init +
+                                  '</span> <span class="text-success">' + user_list[i].name +
+                                  '</span> <span class="conditions"></span></li>');
+      if (user_list[i].condition && user_list[i].condition != '')
+        updateConditions(user_list[i]);
+    }
   }
-  if (gm != '')
-    $("#user-" + gm).prepend('<img src="images/gm.png" width="15" class="img-circle"/>')
+}
+
+function updateConditions(user) {
+  var e = $("#user-" + user.name + " > .conditions").get(0);
+  user.condition.split(",").forEach(function(val,i) {
+    $(e).append('<img src="images/' + val + '.png" width="15" class="img-circle"/>');
+  });
 }
 
 function start_sockets(url) {

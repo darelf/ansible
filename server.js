@@ -177,6 +177,7 @@ function removeUser( group, name, callback ) {
       client.del( "groups:gm:" + group );
   });
   client.del( "users:" + name );
+  client.del( "data:" + name );
   client.srem( "groups:" + group, name, callback );
   client.exists( "groups:" + group, function(err, rep) {
     if (rep == 0) {
@@ -294,13 +295,14 @@ function moveUserGroup(socket, data, callback) {
     getGroupList(function(err, rep) {
       io.sockets.emit('grouplist', rep);
     });
-    sendUserDataList(data.group);
     //Let this guy know if there is already a GM for that group
     getGM( data.group, function(err,rep) {
       if (rep)
         socket.emit('newgm', rep);
       else
         socket.emit('newgm', '');
+        
+      sendUserDataList(data.group);
     });
   });
   socket.on('disconnect', function() {
@@ -310,7 +312,8 @@ function moveUserGroup(socket, data, callback) {
     client.del(data.name);
 
     removeUser(data.group, data.name, function(err,rep) {
-      listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep)});
+      listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep)});  
+      sendUserDataList(data.group);
     });
   });
 }
@@ -333,13 +336,14 @@ function registerNewUser(socket, data, callback) {
         getGroupList(function(err, rep) {
           io.sockets.emit('grouplist', rep);
         });
-        sendUserDataList(data.group);
         //Let this guy know if there is already a GM for that group
         getGM( data.group, function(err,rep) {
           if (rep)
             socket.emit('newgm', rep);
           else
             socket.emit('newgm', '');
+            
+          sendUserDataList(data.group);
         });
       });
       
@@ -349,7 +353,8 @@ function registerNewUser(socket, data, callback) {
         //considered a feature in this case.
         client.del(data.name);
         removeUser(data.group, data.name, function(err,rep) {
-          listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep) });
+          listUsers(data.group, function(err,rep) { io.sockets.in(data.group).emit('userlist', rep) });      
+          sendUserDataList(data.group);
         });
       });
     } else {
