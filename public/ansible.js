@@ -43,6 +43,11 @@ function setup() {
   });
 }
 
+//Utility function
+function getStatus() {
+  return $("#status-buttons > .active").map(function() { return this.id.substr(4); }).get();
+}
+
 function loginToRoom(socket) {
   if ( $("#uname").val() != "" ) {
     var room = $("#gameselectInput").val();
@@ -63,11 +68,13 @@ function sendMessage(sock) {
 }
 
 function sendStatusUpdate(sock) {
+  var status = getStatus().toString();
   if (logged_on) {
     var data = {name: $("#uname").val(),
                 token: user_token,
-                init: $("#initiative").val() };
-    sock.emit('changeinit', data);
+                init: $("#initiative").val(),
+                condition: status };
+    sock.emit('updateuser', data);
   }
 }
 
@@ -169,6 +176,7 @@ function start_sockets(url) {
   });
   
   socket.on('updateinit', function(data) {
+    console.log(data);
     user_list.push(data);
     updateInitList();
   });

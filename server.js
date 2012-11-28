@@ -1,10 +1,13 @@
+/* Find the correct environment */
 var fs = require('fs');
 var envfloc = JSON.parse(fs.readFileSync('envloc.json', 'utf-8'));
 var env = JSON.parse(fs.readFileSync(envfloc['ENV_FILE_LOCATION'], 'utf-8'));
 
+/* Allow us to serve the sample client website */
 var st = require('node-static');
 var file = new st.Server('./public');
 
+/* get our stuff together */
 var app = require('http').createServer(handler),
   io = require('socket.io').listen(app),
   crypto = require('crypto'),
@@ -12,20 +15,26 @@ var app = require('http').createServer(handler),
   client = redis.createClient(env['DOTCLOUD_DATA_REDIS_PORT'],
                               env['DOTCLOUD_DATA_REDIS_HOST']);
 
+/* Fix the log level */
 io.set('log level', 2);
+
+/* Let's authenticate with redis (if needed) and listen at the port */
 if (env['DOTCLOUD_DATA_REDIS_PASSWORD'] != '')
   client.auth(env['DOTCLOUD_DATA_REDIS_PASSWORD']);
-
 app.listen(8080);
 
+
+/* A function for serving the sample client */
 function handler(req,res) {
   req.addListener('end', function() {
     file.serve(req,res);
   })
 }
 
+/* What to do when a new connection comes in */
 io.sockets.on('connection', function(socket) {
   console.log("Client connected using " + io.transports[socket.id].name);
+  /* Register action. */
   socket.on('register', function(data) {
     if (data.token) {
       console.log("user has a token: " + data.token);
@@ -50,21 +59,25 @@ io.sockets.on('connection', function(socket) {
       });
     }
   });
+  /* They want a list of users */
   socket.on('users', function(data) {
     listUsers(data.group, function(err,rep) { socket.emit('userlist', rep); } );
   });
+  /* They want to read a single post by id */
   socket.on('read', function(data) {
     readMessage( data.id, function(err, rep) { socket.emit('message', rep); });
   });
+  /* They want to send a chat post to a certain group */
   socket.on('grpmsg', function(data) {
     sendGroupMessage( data.group, data.name, data.text, function(x) {
-      socket.emit('ack', x);
       io.sockets.in(data.group).emit('newmessage', x);
     });
   });
+  /* They want to know what groups are currently active on this server */
   socket.on('grouplisting', function() {
     getGroupList(function(err, rep) { socket.emit('grouplist', rep); });
-  })
+  });
+  /* They want a list of the most recent post ids for a group */
   socket.on('getmessagelist', function(data) {
     messageList( data.group, data.max, function(err,rep){
       socket.emit('messagelist', rep);
@@ -72,12 +85,11 @@ io.sockets.on('connection', function(socket) {
   });
   //socket.emit('channel', {name: 'default'});
   
-  /* Game specific messages */
-  //This one actually should be called changestatus or updateuser
-  socket.on('changeinit', function(data) {
+  /* Update a single user's data, including game specific information */
+  socket.on('updateuser', function(data) {
     checkUserToken( data.name, data.token, function(isok) {
       if (isok) {
-        changeInitiative( data.name, data.init, function(err,rep) {
+        updateUserData( data, function(err,rep) {
           var myrooms = io.sockets.manager.roomClients[socket.id];
           for(var k in myrooms) {
             if ( k != '' ) {
@@ -90,6 +102,7 @@ io.sockets.on('connection', function(socket) {
     });
   });
   
+  /* Someone wants to be awesome */
   socket.on('becomegm', function(data) {
     console.log("Someone wants to be GM: " + data.name);
     checkUserToken( data.name, data.token, function(isok) {
@@ -107,7 +120,7 @@ io.sockets.on('connection', function(socket) {
       }
     });
   });
-  
+  /* That is it for setting up all the responses to incoming client events */
 });
 
 /* Game specific functions */
@@ -130,6 +143,10 @@ function getCurrentInitiative( group, callback ) {
 function changeInitiative( uname, initiative, callback ) {
   console.log("setting key data:" + uname);
   client.hmset( "data:" + uname, {name: uname, init: initiative}, callback);
+}
+
+function updateUserData( data, callback ) {
+  client.hmset( "data:" + data.name, {name: data.name, init: data.init, condition: data.condition}, callback );
 }
 
 function getUserData( name, callback ) {
@@ -159,6 +176,7 @@ function removeUser( group, name, callback ) {
     if ( rep == name )
       client.del( "groups:gm:" + group );
   });
+  client.del( "users:" + name );
   client.srem( "groups:" + group, name, callback );
   client.exists( "groups:" + group, function(err, rep) {
     if (rep == 0) {
@@ -224,6 +242,7 @@ function getNewToken() {
   return crypto.randomBytes(24).toString('base64');
 }
 
+/* We need to check if the token already exists */
 function registerNewUserToken(user, callback) {
   var token = getNewToken();
   client.exists(token, function(err,rep) {
@@ -238,12 +257,15 @@ function registerNewUserToken(user, callback) {
   });
 }
 
+/* Validate parking... I mean, user token */
 function checkUserToken(user, token, callback) {
   client.get(token, function(err, rep) {
     callback( (rep == user) );
   });
 }
 
+/* We are moving a use from one group to another
+   and notifying everyone of what happened */
 function moveUserGroup(socket, data, callback) {
   //Let's leave all the other rooms before joining a new one
   var myrooms = io.sockets.manager.roomClients[socket.id];
@@ -273,6 +295,7 @@ function moveUserGroup(socket, data, callback) {
       io.sockets.emit('grouplist', rep);
     });
     sendUserDataList(data.group);
+    //Let this guy know if there is already a GM for that group
     getGM( data.group, function(err,rep) {
       if (rep)
         socket.emit('newgm', rep);
@@ -311,6 +334,7 @@ function registerNewUser(socket, data, callback) {
           io.sockets.emit('grouplist', rep);
         });
         sendUserDataList(data.group);
+        //Let this guy know if there is already a GM for that group
         getGM( data.group, function(err,rep) {
           if (rep)
             socket.emit('newgm', rep);
