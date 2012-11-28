@@ -72,14 +72,20 @@ joins any group, this event is sent to every connection to let clients update th
 
 ### `updateinit`
 This is an update notification of the intiative for a user. This is sent only to the group
-that user is in. Contains only `{name: <usernmae>, init: <init>}`
+that user is in. Contains all the fields sent from the client `updateuser` command, except
+for the token. (This may change names to `updatestatus` since there is more than just
+initiative in this response)
+
+### `newgm`
+Notification of which user is GM. This is for display purposes of the client. See `becomegm`.
 
 ## Events Clients Send
 
 ### `register {group: <group>, name: <name>, token: <token>}`
 This attempts to register a username in a group. If it works, that user joins that room.
 If that username is already in that room, it fails. The token is optional. If you send it,
-it must a token that is associated with that user name.
+it must a token that is associated with that user name. Otherwise a new token is generated
+and send back in a `newtoken` message to the client.
 
 ### `users {group: <group>}`
 The client is asking for an updated user list for the room.
@@ -100,5 +106,10 @@ sets of usernames).
 Request the `<max>` most recent messages in a group. Don't know how useful this is, maybe for a
 catchup feature?
 
-### `changeinit {name: <username>, token: <token>, init: <init>}`
-Change a user's initiative number. If init is not a number, I have no idea what will happen. Evil, probably.
+### `updateuser {name: <username>, token: <token>, init: <init>, condition: <condition>}`
+Updates the information for one user.
+
+### `becomegm {name: <username>, token: <token>, group: <room>}`
+This is a request to become the GM on a particular room. Only one person can be GM for any given
+room, and if there is no GM any user can request it. If there is one already, this command will
+fail. If it succeeds, the server sends a `newgm` message to all the clients in the room.
