@@ -14,7 +14,7 @@ function setup() {
   $("#sendbutton").attr("disabled", "disabled");
   $("#becomegm").attr("disabled", "disabled");
   // Get this party started
-  var socket = start_sockets('wss://lxfinkbeinerd:8080');
+  var socket = start_sockets('wss://localhost:8080');
   // set up some events
   $("#login").on('click', function() {
     loginToRoom(socket);
