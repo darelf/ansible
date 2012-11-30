@@ -2,20 +2,25 @@
 <html>
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=9"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sample Client</title>
-  <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+  <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet"/>
 	<style>
 	  body { background-image: url('images/debut_light.png'); }
 	  .container-fluid { margin-top: 10px; }
 	  #alertarea { min-height: 2em; }
 	  #initiativelist > li { border-bottom: 1px solid grey; line-height: 2em; }
 	  #initiative { width: 30px; text-align: center; }
+	  #status-buttons > .btn-group { margin-bottom: 3px; }
 	</style>
 </head>
 <body>
   <div class="container-fluid">
 	<div class="row-fluid">
-	  <div class="span4">
+	  <div class="span6">
+	  	<div id="alertarea">
+	  	</div>
 		<div class="input-append">
 		  <input type="text" id="uname" placeholder="user name"/>
 		  <button id="login" class="btn btn-success">Connect</button>
@@ -47,21 +52,30 @@
 		  </div>
 		</div>
 	  </div>
-	  <div class="span8">
-	  	<div id="alertarea">
-	  	</div>
+	  <div class="span6">
+		<div id="status-buttons">
+		  <div class="btn-group" data-toggle="buttons-checkbox">
+			<button id="btn-bleed" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Bleeding" src="images/bleed.png" width="20"/></button>
+			<button id="btn-blinded" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Blinded" src="images/blinded.png" width="20"/></button>
+			<button id="btn-deafened" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Deafened" src="images/broken.png" width="20"/></button>
+			<button id="btn-dazed" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Dazed" src="images/dazed.png" width="20"/></button>
+			<button id="btn-confused" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Confused" src="images/confused.png" width="20"/></button>
+			<button id="btn-dying" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Dying" src="images/dying.png" width="20"/></button>
+		  </div><br/>
+		  <div class="btn-group" data-toggle="buttons-checkbox">
+			<button id="btn-flat-footed" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Flat Footed" src="images/cowering.png" width="20"/></button>
+			<button id="btn-prone" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Prone" src="images/blinded.png" width="20"/></button>
+			<button id="btn-shaken" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Shaken" src="images/broken.png" width="20"/></button>
+			<button id="btn-sickened" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Sickened" src="images/dazed.png" width="20"/></button>
+			<button id="btn-stunned" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Stunned" src="images/confused.png" width="20"/></button>
+			<button id="btn-entangled" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Entangled" src="images/dying.png" width="20"/></button>
+		  </div>
+		</div>
+		<hr/>
 		<div class="form-inline">
 		  <label for="initiative">Init</label>
 		  <input id="initiative" type="text" placeholder="0"/>
 		  <button id="statusbtn" type="button" class="btn tip" title="send status changes">Update</button>
-		</div>
-		<hr/>
-		<div id="status-buttons" class="btn-group" data-toggle="buttons-checkbox">
-		  <button id="btn-bleed" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Bleeding" src="images/bleed.png" width="20"/></button>
-		  <button id="btn-blinded" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Blinded" src="images/blinded.png" width="20"/></button>
-		  <button id="btn-dazed" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Dazed" src="images/dazed.png" width="20"/></button>
-		  <button id="btn-confused" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Confused" src="images/confused.png" width="20"/></button>
-		  <button id="btn-dying" type="button" class="btn btn-warning"><img class="tip img-rounded" title="Dying" src="images/dying.png" width="20"/></button>
 		</div>
 		<ul id="chatbox" class="unstyled">
 		</ul>
