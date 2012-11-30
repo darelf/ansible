@@ -10,7 +10,9 @@ var logged_on = false;
 var gm = '';
 
 function setup() {
+  /* for now, let's turn off the tooltips
   $(".tip").tooltip();
+  */
   $("#sendbutton").attr("disabled", "disabled");
   $("#becomegm").attr("disabled", "disabled");
   // Get this party started
@@ -46,7 +48,7 @@ function setup() {
 
 //Utility function
 function getStatus() {
-  return $("#status-buttons > .active").map(function() { return this.id.substr(4); }).get();
+  return $("#status-buttons .active").map(function() { return this.id.substr(4); }).get();
 }
 
 function loginToRoom(socket) {
