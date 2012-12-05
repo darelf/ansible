@@ -79,6 +79,10 @@ initiative in this response)
 ### `newgm`
 Notification of which user is GM. This is for display purposes of the client. See `becomegm`.
 
+### `newinit`
+This message contains the name of the player/npc with the current initiative. (NPCs aren't
+implemented yet, but will be necessary for init tracking).
+
 ## Events Clients Send
 
 ### `register {group: <group>, name: <name>, token: <token>}`
@@ -113,3 +117,7 @@ Updates the information for one user.
 This is a request to become the GM on a particular room. Only one person can be GM for any given
 room, and if there is no GM any user can request it. If there is one already, this command will
 fail. If it succeeds, the server sends a `newgm` message to all the clients in the room.
+
+### `setinit {name: <username>, token: <token>, group: <room>, playername: <playername>}`
+This sets a certain name as the holder of the current initiative (whatever that means). You
+must have a valid token and also be the current GM for that room. Otherwise, nothing happens.

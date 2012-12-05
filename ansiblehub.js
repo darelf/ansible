@@ -336,6 +336,20 @@ var hub = {
         });
       });
       
+      socket.on('setinit', function(data) {
+        self.storage.checkUserToken( data.name, data.token, function(isok) {
+          if (isok) {
+            self.storage.getGM( data.group, function(err,rep) {
+              if (rep == data.name) {
+                self.storage.setCurrentInitiative( data.group, data.playername, function(err,rep) {
+                  self.sendToGroup( data.group, 'newinit', data.playername );
+                });
+              }
+            });
+          }
+        });
+      });
+      
       /* Someone wants to be awesome */
       socket.on('becomegm', function(data) {
         console.log("Someone wants to be GM: " + data.name);
