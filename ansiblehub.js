@@ -221,8 +221,9 @@ var storage = {
 
   registerNewUser: function(socket, data, callback) {
     var self = this;
-    client.exists( data.name, function(err,rep) {
+    client.exists( "users:" + data.name, function(err,rep) {
       if (rep == 0) {
+        console.log("Client name doesn't exist");
         self.registerNewUserToken(data.name, function(token) {
           socket.emit('newtoken', token);
         });
