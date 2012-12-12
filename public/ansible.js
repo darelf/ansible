@@ -36,7 +36,11 @@ function setup() {
 
   $("#gameselectButton").on('click', function() { loginToRoom(socket) });
   
-  $("#statusbtn").on('click', function() { sendStatusUpdate(socket); });
+  $("#initiative").on('keyup', function(ev) { /*if (ev.which == 13)*/ sendStatusUpdate(socket); });
+  $("body").delegate("#status-buttons button", 'click', function() {
+    $(this).toggleClass('active');
+    sendStatusUpdate(socket);
+  });
   
   $("#becomegm").on('click', function() {
     var room = $("#gameselectInput").val();
@@ -58,8 +62,6 @@ function loginToRoom(socket) {
     var vals = {group: room, name: $("#uname").val()};
     if (user_token != '') vals['token'] = user_token;
     socket.emit('register', vals);
-    $("#sendbutton").removeAttr("disabled");
-    $("#login").attr("disabled", "disabled");
   }
 }
 
@@ -73,9 +75,11 @@ function sendMessage(sock) {
 function sendStatusUpdate(sock) {
   var status = getStatus().toString();
   if (logged_on) {
+    var initiative = $("#initiative").val();
+    initiative = (initiative != '' ? initiative : '0');
     var data = {name: $("#uname").val(),
                 token: user_token,
-                init: $("#initiative").val(),
+                init: initiative,
                 condition: status };
     sock.emit('updateuser', data);
   }
@@ -169,6 +173,8 @@ function start_sockets(url) {
     else {
       $(".alert").alert("close");
       logged_on = true;
+      $("#sendbutton").removeAttr("disabled");
+      $("#login").attr("disabled", "disabled");
     }
   });
   
