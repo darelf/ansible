@@ -58,12 +58,15 @@ var storage = {
   },
 
   removeUser: function( group, name, callback ) {
+    client.del( "users:" + name );
+    client.del( "data:" + name );
+  },
+  
+  removeUserFromGroup: function( group, name, callback ) {
     client.get( "groups:gm:" + group, function(err,rep) {
       if ( rep == name )
         client.del( "groups:gm:" + group );
     });
-    client.del( "users:" + name );
-    client.del( "data:" + name );
     client.srem( "groups:" + group, name, callback );
     client.exists( "groups:" + group, function(err, rep) {
       if (rep == 0) {
@@ -78,7 +81,7 @@ var storage = {
     self.getGroupList(function(err,rep) {
       for(var i = 0; i < rep.length; i++) {
         var group = rep[i];
-        self.removeUser(group, name, function(err,rep) {
+        self.removeUserFromGroup(group, name, function(err,rep) {
           self.listUsers(group, function(err,rep) { hub.sendToGroup('userlist', rep); });
           self.sendUserDataList(group);
         });
@@ -88,11 +91,11 @@ var storage = {
 
   sendUserDataList: function( group ) {
     var self = this;
-    hub.sendToGroup(group, 'clearuserlist');
+    self.ansible.sendToGroup(group, 'clearuserlist');
     self.listUsers( group, function(err, rep) {
       rep.forEach(function(val, i) {
         self.getUserData( val, function(err2, rep2) {
-          hub.sendToGroup(group, 'updateinit', rep2);
+          self.ansible.sendToGroup(group, 'updateinit', rep2);
         });
       });
     });
@@ -177,16 +180,16 @@ var storage = {
   moveUserGroup: function(socket, data, callback) {
     var self = this;
     //Let's leave all the other rooms before joining a new one
-    var myrooms = ansbile.getRooms(socket.id);
+    var myrooms = self.ansible.getRooms(socket.id);
     for(var k in myrooms) {
       if ( k != '' ) {
         var room = k.substr(1);
         socket.leave(room);
         console.log("removing user " + data.name + " from " + room);
-        self.removeUser( room, data.name, function(err, rep) {
+        self.removeUserFromGroup( room, data.name, function(err, rep) {
           //Tell the old group about the updated userlist
-          listUsers( room, function(err, rep) {
-            ansible.sendToGroup( room, 'userlist', rep );
+          self.listUsers( room, function(err, rep) {
+            self.ansible.sendToGroup( room, 'userlist', rep );
           });
         });
       }
@@ -194,26 +197,28 @@ var storage = {
     //join the new room
     socket.join(data.group);
     self.addUser(data.group, data.name, function(err,rep) {
-      callback(err, rep);
+      callback(rep);
       //Update the new group with the new user list
       self.listUsers(data.group, function(err,rep) {
-        ansible.sendToGroup(data.group, 'userlist', rep);
+        self.ansible.sendToGroup(data.group, 'userlist', rep);
       });
       //Let everyone know about the new room list
       self.getGroupList(function(err, rep) {
-        ansible.sendToEveryone('grouplist', rep);
+        self.ansible.sendToEveryone('grouplist', rep);
       });
       //Let this guy know if there is already a GM for that group
       self.notifyGMStatus( data.group, socket );
     });
     socket.on('disconnect', function() {
+      if (!client.exists("users:" + data.name))
+        return;
       console.log("Received Disconnect");
       //Expire token.. this leave the opposite, but that can be
       //considered a feature in this case.
-      client.del(data.name);
+      client.del("users:" + data.name);
   
       self.removeUser(data.group, data.name, function(err,rep) {
-        self.listUsers(data.group, function(err,rep) { ansible.sendToGroup(data.group, 'userlist', rep); });  
+        self.listUsers(data.group, function(err,rep) { self.ansible.sendToGroup(data.group, 'userlist', rep); });  
         self.sendUserDataList(data.group);
       });
     });
@@ -247,7 +252,7 @@ var storage = {
           console.log("Received Disconnect");
           //Expire token.. this leave the opposite, but that can be
           //considered a feature in this case.
-          client.del(data.name);
+          client.del("users:" + data.name);
           self.removeUser(data.group, data.name, function(err,rep) {
             self.listUsers(data.group, function(err,rep) { self.ansible.sendToGroup(data.group, 'userlist', rep); });      
             self.sendUserDataList(data.group);
